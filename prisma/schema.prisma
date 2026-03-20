@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+// ── CATEGORIES ────────────────────────────────────────────
+model Category {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  icon      String?
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+// ── PRODUCTS ──────────────────────────────────────────────
+model Product {
+  id             String           @id @default(uuid())
+  slug           String           @unique
+  name           String
+  shortDesc      String?
+  description    String
+  categoryId     String
+  category       Category         @relation(fields: [categoryId], references: [id])
+  images         Json
+  datasheetUrl   String?
+  specifications Json
+  tags           String[]
+  metaTitle      String?
+  metaDesc       String?
+  isFeatured     Boolean          @default(false)
+  isActive       Boolean          @default(true)
+  enquiries      EnquiryProduct[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+// ── ENQUIRIES ─────────────────────────────────────────────
+model Enquiry {
+  id         String           @id @default(uuid())
+  name       String
+  email      String
+  phone      String
+  company    String?
+  message    String
+  products   EnquiryProduct[]
+  status     EnquiryStatus    @default(new)
+  source     String           @default("web")
+  adminNotes String?
+  quotes     Quote[]
+  createdAt  DateTime         @default(now())
+}
+
+model EnquiryProduct {
+  id        String  @id @default(uuid())
+  enquiryId String
+  productId String
+  enquiry   Enquiry @relation(fields: [enquiryId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// ── QUOTES ────────────────────────────────────────────────
+model Quote {
+  id           String      @id @default(uuid())
+  quoteNumber  String      @unique
+  enquiryId    String
+  enquiry      Enquiry     @relation(fields: [enquiryId], references: [id])
+  lineItems    Json
+  subtotal     Decimal
+  gstAmount    Decimal
+  total        Decimal
+  validityDays Int         @default(30)
+  terms        String?
+  pdfUrl       String?
+  status       QuoteStatus @default(draft)
+  createdAt    DateTime    @default(now())
+}
+
+// ── BLOG POSTS ────────────────────────────────────────────
+model BlogPost {
+  id          String     @id @default(uuid())
+  title       String
+  slug        String     @unique
+  content     String
+  coverImage  String?
+  metaTitle   String?
+  metaDesc    String?
+  tags        String[]
+  status      PostStatus @default(draft)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+}
+
+// ── ADMIN USERS ───────────────────────────────────────────
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+}
+
+// ── ENUMS ─────────────────────────────────────────────────
+enum EnquiryStatus {
+  new
+  contacted
+  quoted
+  closed
+  lost
+}
+
+enum QuoteStatus {
+  draft
+  sent
+  accepted
+  rejected
+}
+
+enum PostStatus {
+  draft
+  published
+}
